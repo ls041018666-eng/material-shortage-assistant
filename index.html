@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#1769e0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="报缺助手">
+  <meta name="description" content="仓库物料报缺快速生成工具">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <title>物料报缺助手</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">📦</div>
+      <div><h1>物料报缺助手</h1><p>选物料 · 填数量 · 发微信群</p></div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="设置">⚙</button>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero">
+      <div><span class="eyebrow">今日报缺</span><h2 id="todayText"></h2></div>
+      <div class="hero-count"><strong id="heroCount">0</strong><span>项物料</span></div>
+    </section>
+
+    <nav class="steps" aria-label="操作步骤">
+      <button class="step active" data-view="pick"><b>1</b><span>选物料</span></button>
+      <button class="step" data-view="fill"><b>2</b><span>填数量</span></button>
+      <button class="step" data-view="send"><b>3</b><span>生成发送</span></button>
+    </nav>
+
+    <section class="view active" id="pickView">
+      <div class="panel search-panel">
+        <div class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="搜索物料编码、名称、规格" autocomplete="off"></div>
+        <button class="primary mini" id="addMaterialBtn">＋ 新增</button>
+      </div>
+      <div class="category-toolbar"><div class="chip-row" id="unitChips"></div><button class="category-manage" id="categoryBtn" type="button">＋ 分类</button></div>
+      <div class="section-head"><div><h3>物料库</h3><p id="materialSummary"></p></div><button class="text-btn" id="importBtn">导入/管理</button></div>
+      <div class="material-list" id="materialList"></div>
+    </section>
+
+    <section class="view" id="fillView">
+      <div class="section-head"><div><h3>报缺明细</h3><p>填写库存数量和紧急程度</p></div><button class="text-btn danger" id="clearBtn">清空</button></div>
+      <div class="shortage-list" id="shortageList"></div>
+      <button class="bottom-next primary" data-go="send">下一步：生成消息</button>
+    </section>
+
+    <section class="view" id="sendView">
+      <div class="panel form-card">
+        <div class="two-col">
+          <label><span>日期</span><input id="reportDate" type="date"></label>
+          <label><span>班次</span><select id="shift"><option>白班</option><option>夜班</option><option>早班</option><option>中班</option><option>其他</option></select></label>
+        </div>
+        <div class="two-col">
+          <label><span>仓库/区域</span><input id="warehouse" placeholder="例如：原料仓"></label>
+          <label><span>报缺人</span><input id="reporter" placeholder="填写姓名"></label>
+        </div>
+        <label><span>统一说明（可选）</span><input id="extraNote" placeholder="例如：紧急物料请优先安排"></label>
+      </div>
+      <div class="section-head"><div><h3>微信群消息预览</h3><p id="charCount">0 字</p></div></div>
+      <pre class="preview" id="preview"></pre>
+      <div class="send-actions">
+        <button class="primary big" id="copyBtn">📋 一键复制</button>
+        <button class="success big" id="shareBtn">↗ 分享</button>
+      </div>
+      <button class="secondary full" id="saveHistoryBtn">保存到历史记录</button>
+      <div class="section-head history-head"><div><h3>最近记录</h3><p>可再次使用以前的报缺清单</p></div></div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+  </main>
+
+  <div class="mobile-bar">
+    <button data-view="pick" class="active"><span>⌕</span>选物料</button>
+    <button data-view="fill"><span>▤</span>明细 <i id="barCount">0</i></button>
+    <button data-view="send"><span>➤</span>生成</button>
+  </div>
+
+  <div class="modal" id="materialModal">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><h3 id="materialModalTitle">新增物料</h3><button data-close="materialModal">×</button></div>
+      <input type="hidden" id="editId">
+      <label><span>物料编码 *</span><input id="materialCode" placeholder="例如：WL-10001"></label>
+      <label><span>物料名称 *</span><input id="materialName" placeholder="例如：六角螺栓"></label>
+      <div class="two-col"><label><span>规格型号</span><input id="materialSpec" placeholder="例如：M8×30"></label><label><span>单位</span><input id="materialUnit" placeholder="个/箱/kg"></label></div>
+      <label><span>厂家/分类</span><input id="materialManufacturer" placeholder="例如：江苏博俊工业科技股份有限公司"></label>
+      <button class="primary full big" id="saveMaterialBtn">保存物料</button>
+    </div>
+  </div>
+
+  <div class="modal" id="manageModal">
+    <div class="sheet tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><h3>导入与管理</h3><button data-close="manageModal">×</button></div>
+      <div class="tip">支持 Excel（XLSX/XLS）、CSV/TXT、Word（DOCX/DOC）文件，也可以直接粘贴表格。识别列：物料编码、物料名称、规格型号、单位、厂家/供应商。重复编码会更新原数据；包含车型列时会优先导入 HB11 和通用件。</div>
+      <textarea id="importText" rows="6" placeholder="物料编码	物料名称	规格型号	单位	厂家
+A10001	六角螺栓	M8×30	个	示例厂家"></textarea>
+      <div class="button-grid"><button class="primary" id="doImportBtn">导入粘贴内容</button><button class="secondary" id="fileBtn">选择文档/表格</button></div>
+      <input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.txt,.docx,.doc" hidden>
+      <div class="category-editor"><div class="category-editor-head"><strong>厂家分类</strong><span>可自由新增、改名、删除</span></div><div class="category-add"><input id="newCategory" placeholder="输入厂家/分类名称"><button class="secondary" id="addCategoryBtn">新增</button></div><div class="category-list" id="categoryList"></div></div>
+      <div class="manage-tools"><input id="manageSearch" type="search" placeholder="搜索已有物料"><button class="secondary" id="exportBtn">导出备份</button></div>
+      <div class="manage-list" id="manageList"></div>
+      <button class="danger-outline full" id="deleteAllBtn">删除全部物料</button>
+    </div>
+  </div>
+
+  <div class="modal" id="settingsModal">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><h3>应用设置</h3><button data-close="settingsModal">×</button></div>
+      <div class="setting-row"><div><strong>安装到手机桌面</strong><p>安装后可像普通 App 一样打开</p></div><button class="primary mini" id="installBtn">安装</button></div>
+      <div class="setting-row"><div><strong>数据说明</strong><p>数据仅保存在当前设备浏览器，请定期导出备份</p></div></div>
+      <button class="secondary full" id="clearHistoryBtn">清空历史记录</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="seed-materials.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
