@@ -1,4 +1,4 @@
-const CACHE='material-shortage-v3';
+const CACHE='material-shortage-v4';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon.svg','./seed-materials.js','./vendor/xlsx.full.min.js','./vendor/jszip.min.js'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));

@@ -54,8 +54,9 @@ function bind(){
  $('clearBtn').addEventListener('click',clearCurrent);$('copyBtn').addEventListener('click',()=>copy(buildReport()));
  $('shareBtn').addEventListener('click',share);$('saveHistoryBtn').addEventListener('click',saveHistory);
  $('clearHistoryBtn').addEventListener('click',clearHistory);$('installBtn').addEventListener('click',installApp);
- document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+ document.querySelectorAll('[data-close]').forEach(b=>{const close=e=>{e.preventDefault();e.stopPropagation();closeModal(b.getAttribute('data-close'))};b.addEventListener('click',close);b.addEventListener('touchend',close,{passive:false})});
  document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.modal.show');if(open)closeModal(open.id)}});
  [el.date,el.shift,el.warehouse,el.reporter,el.note].forEach(x=>{x.addEventListener('input',()=>{saveSettings();renderPreview()});x.addEventListener('change',()=>{saveSettings();renderPreview()})});
  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').disabled=false});
  window.addEventListener('appinstalled',()=>{installPrompt=null;toast('已安装到手机桌面')});
@@ -150,7 +151,7 @@ async function share(){const t=buildReport();if(navigator.share)try{await naviga
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null}else toast('请用浏览器菜单选择“添加到主屏幕”')}
 function saveSettings(){settings={shift:el.shift.value,warehouse:el.warehouse.value,reporter:el.reporter.value,note:el.note.value};save(K.s,settings)}
 function registerSW(){if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{})}
-function openModal(id){$(id).classList.add('show');document.body.style.overflow='hidden'}function closeModal(id){$(id).classList.remove('show');if(!document.querySelector('.modal.show'))document.body.style.overflow=''}
+function openModal(id){const modal=$(id);if(!modal)return;modal.classList.add('show');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden'}function closeModal(id){const modal=$(id);if(!modal)return;modal.classList.remove('show');modal.setAttribute('aria-hidden','true');if(document.activeElement instanceof HTMLElement)document.activeElement.blur();if(!document.querySelector('.modal.show'))document.body.style.overflow=''}
 function persist(){save(K.m,materials)}function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function today(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day}function formatDate(s){const [y,m,d]=s.split('-');return y+'年'+Number(m)+'月'+Number(d)+'日'}
 function norm(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,'')}function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random().toString(36).slice(2)}
